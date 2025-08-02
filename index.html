@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloader TikTok (SnapTik API)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            text-align: center;
+        }
+        h1 {
+            color: #FF0050;
+        }
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 30px;
+            background: #FF0050;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #e00040;
+        }
+        #result {
+            margin: 20px 0;
+            min-height: 24px;
+            font-weight: bold;
+        }
+        .video-container {
+            margin: 20px 0;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF0050;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>⬇️ Downloader TikTok</h1>
+    <input 
+        type="text" 
+        id="tiktok-url" 
+        placeholder="Masukkan link TikTok contoh: https://vt.tiktok.com/xxx"
+    >
+    <button onclick="downloadVideo()">Download</button>
+    
+    <div id="result"></div>
+    <div class="loader" id="loader"></div>
+    <div class="video-container" id="video-container"></div>
+
+    <script>
+        async function downloadVideo() {
+            const url = document.getElementById('tiktok-url').value.trim();
+            const result = document.getElementById('result');
+            const loader = document.getElementById('loader');
+            const container = document.getElementById('video-container');
+            
+            // Validasi URL
+            if (!url || !url.includes('tiktok.com')) {
+                result.innerHTML = '<span style="color: red">⚠️ Link TikTok tidak valid!</span>';
+                return;
+            }
+
+            // Reset tampilan
+            result.innerHTML = '';
+            container.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                // Langkah 1: Dapatkan token dari SnapTik
+                const tokenResponse = await fetch('https://snaptik.app');
+                const tokenHtml = await tokenResponse.text();
+                const token = new DOMParser()
+                    .parseFromString(tokenHtml, 'text/html')
+                    .querySelector('input[name="token"]').value;
+
+                // Langkah 2: Kirim permintaan download
+                const formData = new FormData();
+                formData.append('token', token);
+                formData.append('url', url);
+
+                const downloadResponse = await fetch('https://snaptik.app/abc2.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await downloadResponse.json();
+
+                // Langkah 3: Proses hasil
+                if (data.url) {
+                    container.innerHTML = `
+                        <video controls width="100%">
+                            <source src="${data.url}" type="video/mp4">
+                        </video>
+                        <a href="${data.url}" download="tiktok_${Date.now()}.mp4">
+                            <button>💾 Download Video</button>
+                        </a>
+                    `;
+                    result.innerHTML = '<span style="color: green">✅ Berhasil! Klik tombol download di atas</span>';
+                } else {
+                    throw new Error('Gagal mendapatkan link download');
+                }
+            } catch (error) {
+                result.innerHTML = `<span style="color: red">❌ Error: ${error.message}</span>`;
+                console.error('Error:', error);
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
